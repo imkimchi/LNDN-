@@ -1,0 +1,14 @@
+{
+	"type": "module",
+	"dependencies": {
+		"axios": "^1.7.2",
+		"cheerio": "1.0.0-rc.12",
+		"dayjs": "^1.11.12",
+		"dotenv": "^16.4.5",
+		"node-telegram-bot-api": "^0.66.0",
+		"puppeteer-core": "^22.14.0",
+		"puppeteer-extra": "^3.3.6",
+		"puppeteer-extra-plugin-stealth": "^2.11.2",
+		"rsshub": "1.0.0-master.4dd9837"
+	}
+}
