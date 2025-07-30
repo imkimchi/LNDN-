@@ -1,7 +1,8 @@
 import axios from 'axios';
 import cheerio from 'cheerio';
+import { createScraperWrapper, ScrapingError } from '../utils/errorHandler.js';
 
-export default async function getSpareroomListings(url) {
+async function getSpareroomListingsInternal(url) {
     const { data } = await axios.get(url, {
         headers: {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
@@ -15,6 +16,11 @@ export default async function getSpareroomListings(url) {
             'Upgrade-Insecure-Requests': `1`
         }
     });
+
+    if (!data) {
+        throw new ScrapingError('No data received from SpareRoom', 'SpareRoom', url);
+    }
+
     const $ = cheerio.load(data);
     const listings = [];
 
@@ -29,5 +35,11 @@ export default async function getSpareroomListings(url) {
         }
     });
 
+    if (listings.length === 0) {
+        throw new ScrapingError('No listings found - possible page structure change', 'SpareRoom', url);
+    }
+
     return listings;
 }
+
+export default createScraperWrapper('SpareRoom', getSpareroomListingsInternal);

@@ -1,0 +1,29 @@
+{
+  "searches": [
+    {
+      "name": "room for a 2 bed flat",
+      "url": "https://www.spareroom.co.uk/flatshare/?search_id=1331586921&sort_by=days_since_placed&mode=list",
+      "enabled": true
+    },
+    {
+      "name": "Studio",
+      "url": "https://www.spareroom.co.uk/flatshare/?search_id=1331586754&sort_by=days_since_placed&mode=list",
+      "enabled": true
+    },
+    {
+      "name": "1bed",
+      "url": "https://www.rightmove.co.uk/property-to-rent/find.html?locationIdentifier=REGION%5E87490&sortType=6&savedSearchId=52349125&maxBedrooms=1&minBedrooms=0&maxPrice=1300&minPrice=800&radius=0&includeLetAgreed=false",
+      "enabled": true
+    },
+    {
+      "name": "Foxtons London",
+      "url": "https://www.foxtons.co.uk/properties-to-rent/london?order_by=price_desc&expand=5&pricePeriod=PerMonth&sold=0&price_to=250",
+      "enabled": true
+    },
+    {
+      "name": "Studio",
+      "url": "https://www.zoopla.co.uk/to-rent/property/furzedown/?search_identifier=2af918e02b6ed1799b742d6df0b82ff80573475747f8be244785ffe8c414a91c",
+      "enabled": false
+    }
+  ]
+}
