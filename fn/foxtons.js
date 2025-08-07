@@ -1,107 +1,179 @@
-import browserPool from '../utils/browserPool.js';
-
+import axios from 'axios';
+import * as cheerio from 'cheerio';
 import { createScraperWrapper, ScrapingError } from '../utils/errorHandler.js';
 
-async function getFoxtonsListingsInternal(url) {
-    let browser;
-    
+// Extract detailed info from a single property page
+async function getPropertyDetails(propertyUrl, headers) {
     try {
-        browser = await browserPool.getBrowser();
-        if (!browser) {
-            throw new ScrapingError('Failed to get browser from pool', 'Foxtons', url);
-        }
-
-        const page = await browser.newPage();
+        const response = await axios.get(propertyUrl, { headers, timeout: 30000 });
+        const $ = cheerio.load(response.data);
         
-        // Set user agent and viewport
-        await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36');
-        await page.setViewport({ width: 1920, height: 1080 });
-
-        // Navigate to the page
-        await page.goto(url, { 
-            waitUntil: 'networkidle2',
-            timeout: 30000 
-        });
-
-        // Wait for content to load
-        await new Promise(resolve => setTimeout(resolve, 3000));
-
-        const listings = await page.evaluate(() => {
-            const results = [];
-            
-            // Strategy 1: Extract from JSON-LD structured data
-            const scripts = document.querySelectorAll('script[type="application/ld+json"]');
-            
-            for (const script of scripts) {
-                try {
-                    const data = JSON.parse(script.textContent);
+        // Try to get data from JSON-LD first
+        const scripts = $('script[type="application/ld+json"]');
+        
+        for (let i = 0; i < scripts.length; i++) {
+            try {
+                const data = JSON.parse($(scripts[i]).html());
+                if (data['@type'] === 'Product' && data.offers && data.additionalProperty) {
+                    // Extract address from additionalProperty
+                    const addressProperty = data.additionalProperty?.find(prop => prop.name === 'address');
+                    const address = addressProperty?.value;
                     
-                    // Look for ItemList with property URLs
-                    if (data['@type'] === 'ItemList' && data.itemListElement) {
-                        data.itemListElement.forEach(item => {
-                            if (item.url && item.url.includes('/properties-to-rent/')) {
-                                // Extract property ID from URL
-                                const urlParts = item.url.split('/');
-                                const propertyId = urlParts[urlParts.length - 1];
-                                
-                                results.push({
-                                    id: propertyId,
-                                    link: item.url,
-                                    title: `Foxtons Property ${propertyId}`
-                                });
-                            }
-                        });
-                    }
-                } catch (e) {
-                    // Continue to fallback strategy
+                    return {
+                        title: data.name || $('h1').text().trim() || 'Property',
+                        price: data.offers.priceSpecification?.price ? 
+                               `£${data.offers.priceSpecification.price} pcm` : 
+                               $('.price, [class*="price"]').first().text().trim(),
+                        location: address ? 
+                                 `${address.streetAddress}, ${address.addressLocality}, ${address.postalCode}` : 
+                                 $('h1').text().trim(),
+                        description: data.description || null,
+                        images: data.image ? [data.image] : []
+                    };
                 }
+            } catch (e) {
+                // Continue to next script or fallback
             }
-            
-            // Strategy 2: DOM scraping fallback (if JSON-LD doesn't work)
-            if (results.length === 0) {
-                const propertyLinks = document.querySelectorAll('a[href*="/properties-to-rent/"]');
-                
-                propertyLinks.forEach(link => {
-                    const href = link.getAttribute('href');
-                    if (href && href.includes('/properties-to-rent/')) {
-                        const urlParts = href.split('/');
-                        const propertyId = urlParts[urlParts.length - 1];
-                        
-                        if (!results.some(r => r.id === propertyId)) {
-                            let title = link.textContent?.trim() || '';
-                            if (!title) {
-                                const parent = link.closest('[class*="property"], [class*="listing"], [class*="card"]');
-                                if (parent) {
-                                    const titleEl = parent.querySelector('h1, h2, h3, h4, [class*="title"]');
-                                    title = titleEl?.textContent?.trim() || '';
-                                }
-                            }
-                            
-                            results.push({
-                                id: propertyId,
-                                link: href.startsWith('http') ? href : `https://www.foxtons.co.uk${href}`,
-                                title: title || `Foxtons Property ${propertyId}`
-                            });
-                        }
-                    }
-                });
-            }
-            
-            return results;
+        }
+        
+        // Fallback: extract from DOM
+        const title = $('h1').text().trim() || $('title').text().replace(' | Foxtons', '').trim();
+        const price = $('[class*="price"]').first().text().trim();
+        const location = $('h1').text().trim();
+        
+        return {
+            title: title || 'Property',
+            price: price || null,
+            location: location || null,
+            description: null,
+            images: []
+        };
+        
+    } catch (error) {
+        console.warn(`Failed to get details for ${propertyUrl}: ${error.message}`);
+        return {
+            title: 'Property',
+            price: null,
+            location: null,
+            description: null,
+            images: []
+        };
+    }
+}
+
+async function getFoxtonsListingsInternal(url) {
+    try {
+        // Set up realistic headers to avoid detection
+        const headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'en-GB,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+            'Sec-Ch-Ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Ch-Ua-Platform': '"macOS"',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Upgrade-Insecure-Requests': '1',
+            'Dnt': '1'
+        };
+
+        const response = await axios.get(url, {
+            headers,
+            timeout: 30000,
+            maxRedirects: 5
         });
 
-        if (listings.length === 0) {
-            throw new ScrapingError('No listings found - possible page structure change or bot detection', 'Foxtons', url);
+        const $ = cheerio.load(response.data);
+        let propertyUrls = [];
+        
+        // Strategy 1: Extract from JSON-LD structured data
+        const scripts = $('script[type="application/ld+json"]');
+        
+        scripts.each((_, script) => {
+            try {
+                const data = JSON.parse($(script).html());
+                
+                // Look for ItemList with property URLs
+                if (data['@type'] === 'ItemList' && data.itemListElement) {
+                    data.itemListElement.forEach(item => {
+                        if (item.url && item.url.includes('/properties-to-rent/')) {
+                            propertyUrls.push(item.url);
+                        }
+                    });
+                }
+            } catch (e) {
+                // Continue to fallback strategy
+            }
+        });
+        
+        // Strategy 2: DOM scraping fallback (if JSON-LD doesn't work)
+        if (propertyUrls.length === 0) {
+            const propertyLinks = $('a[href*="/properties-to-rent/"]');
+            
+            propertyLinks.each((_, link) => {
+                const href = $(link).attr('href');
+                if (href && href.includes('/properties-to-rent/')) {
+                    const fullUrl = href.startsWith('http') ? href : `https://www.foxtons.co.uk${href}`;
+                    if (!propertyUrls.includes(fullUrl)) {
+                        propertyUrls.push(fullUrl);
+                    }
+                }
+            });
         }
 
-        return listings;
-    } finally {
-        if (browser) {
-            // Close the page but keep browser for reuse
-            const pages = await browser.pages();
-            await Promise.all(pages.slice(1).map(page => page.close())); // Close all pages except the first one
-            await browserPool.releaseBrowser(browser);
+        if (propertyUrls.length === 0) {
+            throw new ScrapingError('No property URLs found - possible page structure change or bot detection', 'Foxtons', url);
         }
+
+        // Now fetch details for each property
+        const results = [];
+        const maxConcurrent = 3; // Limit concurrent requests to avoid being blocked
+        
+        for (let i = 0; i < propertyUrls.length; i += maxConcurrent) {
+            const batch = propertyUrls.slice(i, i + maxConcurrent);
+            const batchPromises = batch.map(async (propertyUrl) => {
+                const urlParts = propertyUrl.split('/');
+                const propertyId = urlParts[urlParts.length - 1];
+                
+                const details = await getPropertyDetails(propertyUrl, headers);
+                
+                return {
+                    id: propertyId,
+                    link: propertyUrl,
+                    title: details.title,
+                    price: details.price,
+                    location: details.location,
+                    description: details.description,
+                    images: details.images,
+                    // Additional fields for consistency with other scrapers
+                    bedrooms: null,
+                    bathrooms: null,
+                    summary: details.description,
+                    addedDate: null
+                };
+            });
+            
+            const batchResults = await Promise.all(batchPromises);
+            results.push(...batchResults);
+            
+            // Add a small delay between batches to be respectful
+            if (i + maxConcurrent < propertyUrls.length) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+
+        return results;
+    } catch (error) {
+        if (error instanceof ScrapingError) throw error;
+        if (error.response) {
+            throw new ScrapingError(`HTTP error ${error.response.status}: ${error.response.statusText}`, 'Foxtons', url);
+        }
+        throw new ScrapingError(`Request error: ${error.message}`, 'Foxtons', url);
     }
 }
 

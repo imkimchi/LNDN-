@@ -33,12 +33,16 @@ class BrowserPool {
         
         const browser = await puppeteer.launch({
             headless: true,
+            executablePath: process.env.CHROME_PATH || undefined,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
                 '--disable-accelerated-2d-canvas',
                 '--disable-gpu',
+                '--disable-background-timer-throttling',
+                '--disable-backgrounding-occluded-windows',
+                '--disable-renderer-backgrounding',
                 '--window-size=1920x1080'
             ]
         });
@@ -100,15 +104,22 @@ class BrowserPool {
 // Singleton instance
 const browserPool = new BrowserPool();
 
-// Cleanup on process exit
-process.on('SIGINT', async () => {
-    await browserPool.cleanup();
-    process.exit(0);
-});
+// Track if listeners are already attached to prevent duplicates
+let listenersAttached = false;
 
-process.on('SIGTERM', async () => {
-    await browserPool.cleanup();
-    process.exit(0);
-});
+// Cleanup on process exit (only attach once)
+if (!listenersAttached) {
+    process.on('SIGINT', async () => {
+        await browserPool.cleanup();
+        process.exit(0);
+    });
+
+    process.on('SIGTERM', async () => {
+        await browserPool.cleanup();
+        process.exit(0);
+    });
+
+    listenersAttached = true;
+}
 
 export default browserPool;

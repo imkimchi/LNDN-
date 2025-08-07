@@ -1,6 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 
+/**
+ * Configuration manager for handling search configurations and environment variables
+ */
+
 class ConfigManager {
     constructor() {
         this.configDir = path.join(process.cwd(), 'config');
@@ -8,6 +12,10 @@ class ConfigManager {
         this._searches = null;
     }
 
+    /**
+     * Validates that all required environment variables are present
+     * @throws {Error} If required environment variables are missing
+     */
     validateEnvironment() {
         const required = ['TELEGRAM_BOT_TOKEN', 'CHAT_ID'];
         const missing = required.filter(key => !process.env[key]);
@@ -22,6 +30,11 @@ class ConfigManager {
         }
     }
 
+    /**
+     * Loads and validates search configurations from the config file
+     * @returns {Array} Array of enabled search configurations
+     * @throws {Error} If configuration file is invalid
+     */
     loadSearches() {
         if (this._searches) {
             return this._searches;
@@ -63,15 +76,31 @@ class ConfigManager {
         }
     }
 
+    /**
+     * Forces a reload of search configurations from disk
+     * @returns {Array} Reloaded search configurations
+     */
     reloadSearches() {
         this._searches = null;
         return this.loadSearches();
     }
 
+    /**
+     * Gets the current search configurations
+     * @returns {Array} Array of search configurations
+     */
     getSearches() {
         return this.loadSearches();
     }
 
+    /**
+     * Adds a new search configuration and saves to file
+     * @param {Object} search - The search configuration to add
+     * @param {string} search.name - The search name
+     * @param {string} search.url - The search URL
+     * @param {boolean} [search.enabled=true] - Whether the search is enabled
+     * @throws {Error} If search configuration is invalid
+     */
     addSearch(search) {
         if (!search.name || !search.url) {
             throw new Error('Search must have name and url properties');
@@ -88,11 +117,19 @@ class ConfigManager {
         this._searches = null; // Force reload
     }
 
+    /**
+     * Saves search configurations to the config file
+     * @param {Array} searches - Array of search configurations to save
+     */
     saveSearches(searches) {
         const config = { searches };
         fs.writeFileSync(this.searchesFile, JSON.stringify(config, null, 2));
     }
 
+    /**
+     * Gets the application configuration from environment variables
+     * @returns {Object} Application configuration object
+     */
     getAppConfig() {
         return {
             telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,

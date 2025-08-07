@@ -36,6 +36,9 @@ Required environment variables (configured via `.env`):
 - `TELEGRAM_BOT_TOKEN` - Telegram bot authentication token
 - `CHAT_ID` - Telegram chat ID for sending notifications
 
+Optional environment variables:
+- `STORAGE_CHANNEL_ID` - Private channel ID for image caching (recommended for better organization)
+
 ## Development Commands
 
 Install dependencies:
