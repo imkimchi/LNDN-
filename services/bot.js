@@ -7,8 +7,20 @@ dotenv.config();
 
 let botInstance = null;
 let storageChannelId = null;
-// Key: message_id, Value: { listing, currentIndex, chatId, searchName, fileIds }
+// Key: message_id, Value: { listing, currentIndex, chatId, searchName, fileIds, timestamp }
 const galleryState = new Map();
+
+// Clean up old gallery states (older than 1 week)
+setInterval(() => {
+    const now = Date.now();
+    const maxAge = 7 * 24 * 60 * 60 * 1000; // 1 week
+    
+    for (const [messageId, state] of galleryState.entries()) {
+        if (now - state.timestamp > maxAge) {
+            galleryState.delete(messageId);
+        }
+    }
+}, 60 * 60 * 1000); // Run cleanup every hour
 // Cache for image URL to file_id mapping
 const imageCache = new Map();
 
@@ -66,7 +78,7 @@ class TelegramRateLimiter {
     async waitForRateLimit() {
         const now = Date.now();
         const timeSinceLastMessage = now - this.lastMessageTime;
-        const minimumDelay = 3000; // 3 seconds between messages to be very safe
+        const minimumDelay = 5000; // 5 seconds between messages to be very safe
         
         if (timeSinceLastMessage < minimumDelay) {
             const waitTime = minimumDelay - timeSinceLastMessage;
@@ -248,6 +260,7 @@ async function sendListingWithImages(chatId, listing, searchName) {
                 chatId,
                 searchName,
                 fileIds,
+                timestamp: Date.now(),
             });
         }).catch(error => {
             logger.error('Background image caching failed', {
@@ -262,6 +275,7 @@ async function sendListingWithImages(chatId, listing, searchName) {
                 chatId,
                 searchName,
                 fileIds: new Array(listing.images.length).fill(null),
+                timestamp: Date.now(),
             });
         });
 
@@ -272,6 +286,7 @@ async function sendListingWithImages(chatId, listing, searchName) {
             chatId,
             searchName,
             fileIds: new Array(listing.images.length).fill(null),
+            timestamp: Date.now(),
         });
     } else {
         await bot.sendMessage(chatId, caption);
@@ -322,7 +337,7 @@ function setupCallbackListener(bot) {
             });
 
             // Update the state in our map
-            galleryState.set(messageId, { ...state, currentIndex, fileIds });
+            galleryState.set(messageId, { ...state, currentIndex, fileIds, timestamp: Date.now() });
         }
         
         await bot.answerCallbackQuery(callbackQuery.id);
