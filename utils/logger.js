@@ -1,1 +1,179 @@
-/**\n * Structured logging utility for the real estate bot\n */\nimport dayjs from 'dayjs';\n\n// Log levels with numeric priorities for filtering\nconst LOG_LEVELS = {\n    ERROR: { priority: 0, name: 'ERROR', color: '\\x1b[31m' }, // Red\n    WARN: { priority: 1, name: 'WARN', color: '\\x1b[33m' },   // Yellow\n    INFO: { priority: 2, name: 'INFO', color: '\\x1b[36m' },   // Cyan\n    DEBUG: { priority: 3, name: 'DEBUG', color: '\\x1b[90m' }  // Gray\n};\n\nconst RESET_COLOR = '\\x1b[0m';\n\nclass Logger {\n    constructor() {\n        this.logLevel = process.env.LOG_LEVEL || 'INFO';\n        this.logLevelPriority = LOG_LEVELS[this.logLevel]?.priority ?? LOG_LEVELS.INFO.priority;\n        this.enableColors = process.stdout.isTTY && process.env.NO_COLOR !== '1';\n    }\n\n    /**\n     * Formats a log message with timestamp and context\n     * @param {string} level - Log level\n     * @param {string} message - Main log message\n     * @param {Object} context - Additional context data\n     * @returns {string} Formatted log message\n     */\n    formatMessage(level, message, context = {}) {\n        const timestamp = dayjs().format('MM-DD HH:mm:ss');\n        const levelInfo = LOG_LEVELS[level];\n        \n        // Color formatting for terminal output\n        const levelText = this.enableColors\n            ? `${levelInfo.color}[${levelInfo.name}]${RESET_COLOR}`\n            : `[${levelInfo.name}]`;\n        \n        let formatted = `${timestamp} ${levelText} ${message}`;\n        \n        // Add context if provided\n        if (Object.keys(context).length > 0) {\n            const contextStr = JSON.stringify(context, null, 0);\n            formatted += ` ${contextStr}`;\n        }\n        \n        return formatted;\n    }\n\n    /**\n     * Logs a message if it meets the minimum log level\n     * @param {string} level - Log level\n     * @param {string} message - Log message\n     * @param {Object} context - Additional context\n     */\n    log(level, message, context = {}) {\n        const levelInfo = LOG_LEVELS[level];\n        if (!levelInfo || levelInfo.priority > this.logLevelPriority) {\n            return;\n        }\n        \n        const formatted = this.formatMessage(level, message, context);\n        \n        // Use appropriate console method\n        if (level === 'ERROR') {\n            console.error(formatted);\n        } else if (level === 'WARN') {\n            console.warn(formatted);\n        } else {\n            console.log(formatted);\n        }\n    }\n\n    /**\n     * Log error with stack trace and context\n     * @param {string} message - Error message\n     * @param {Error|Object} error - Error object or context\n     * @param {Object} context - Additional context\n     */\n    error(message, error, context = {}) {\n        const errorContext = { ...context };\n        \n        if (error instanceof Error) {\n            errorContext.error = error.message;\n            errorContext.stack = error.stack;\n            if (error.code) errorContext.code = error.code;\n        } else if (error && typeof error === 'object') {\n            Object.assign(errorContext, error);\n        }\n        \n        this.log('ERROR', message, errorContext);\n    }\n\n    /**\n     * Log warning message\n     * @param {string} message - Warning message\n     * @param {Object} context - Additional context\n     */\n    warn(message, context = {}) {\n        this.log('WARN', message, context);\n    }\n\n    /**\n     * Log info message\n     * @param {string} message - Info message\n     * @param {Object} context - Additional context\n     */\n    info(message, context = {}) {\n        this.log('INFO', message, context);\n    }\n\n    /**\n     * Log debug message\n     * @param {string} message - Debug message\n     * @param {Object} context - Additional context\n     */\n    debug(message, context = {}) {\n        this.log('DEBUG', message, context);\n    }\n\n    /**\n     * Log scraping activity with standardized format\n     * @param {string} scraperName - Name of the scraper\n     * @param {string} action - Action being performed\n     * @param {Object} details - Additional details\n     */\n    scraper(scraperName, action, details = {}) {\n        this.info(`${scraperName}: ${action}`, {\n            scraper: scraperName,\n            action,\n            ...details\n        });\n    }\n\n    /**\n     * Log Telegram bot activity\n     * @param {string} action - Bot action\n     * @param {Object} details - Additional details\n     */\n    bot(action, details = {}) {\n        this.info(`Telegram: ${action}`, {\n            component: 'telegram',\n            action,\n            ...details\n        });\n    }\n\n    /**\n     * Log performance metrics\n     * @param {string} operation - Operation name\n     * @param {number} duration - Duration in milliseconds\n     * @param {Object} metrics - Additional metrics\n     */\n    performance(operation, duration, metrics = {}) {\n        this.info(`Performance: ${operation}`, {\n            operation,\n            duration_ms: duration,\n            ...metrics\n        });\n    }\n\n    /**\n     * Log application lifecycle events\n     * @param {string} event - Lifecycle event\n     * @param {Object} details - Additional details\n     */\n    lifecycle(event, details = {}) {\n        this.info(`Lifecycle: ${event}`, {\n            event,\n            ...details\n        });\n    }\n}\n\n// Create singleton instance\nconst logger = new Logger();\n\nexport default logger;\nexport { LOG_LEVELS };
+/**
+ * Structured logging utility for the real estate bot
+ */
+import dayjs from 'dayjs';
+
+// Log levels with numeric priorities for filtering
+const LOG_LEVELS = {
+    ERROR: { priority: 0, name: 'ERROR', color: '\x1b[31m' }, // Red
+    WARN: { priority: 1, name: 'WARN', color: '\x1b[33m' },   // Yellow
+    INFO: { priority: 2, name: 'INFO', color: '\x1b[36m' },   // Cyan
+    DEBUG: { priority: 3, name: 'DEBUG', color: '\x1b[90m' }  // Gray
+};
+
+const RESET_COLOR = '\x1b[0m';
+
+class Logger {
+    constructor() {
+        this.logLevel = process.env.LOG_LEVEL || 'INFO';
+        this.logLevelPriority = LOG_LEVELS[this.logLevel]?.priority ?? LOG_LEVELS.INFO.priority;
+        this.enableColors = process.stdout.isTTY && process.env.NO_COLOR !== '1';
+    }
+
+    /**
+     * Formats a log message with timestamp and context
+     * @param {string} level - Log level
+     * @param {string} message - Main log message
+     * @param {Object} context - Additional context data
+     * @returns {string} Formatted log message
+     */
+    formatMessage(level, message, context = {}) {
+        const timestamp = dayjs().format('MM-DD HH:mm:ss');
+        const levelInfo = LOG_LEVELS[level];
+        
+        // Color formatting for terminal output
+        const levelText = this.enableColors
+            ? `${levelInfo.color}[${levelInfo.name}]${RESET_COLOR}`
+            : `[${levelInfo.name}]`;
+        
+        let formatted = `${timestamp} ${levelText} ${message}`;
+        
+        // Add context if provided
+        if (Object.keys(context).length > 0) {
+            const contextStr = JSON.stringify(context, null, 0);
+            formatted += ` ${contextStr}`;
+        }
+        
+        return formatted;
+    }
+
+    /**
+     * Logs a message if it meets the minimum log level
+     * @param {string} level - Log level
+     * @param {string} message - Log message
+     * @param {Object} context - Additional context
+     */
+    log(level, message, context = {}) {
+        const levelInfo = LOG_LEVELS[level];
+        if (!levelInfo || levelInfo.priority > this.logLevelPriority) {
+            return;
+        }
+        
+        const formatted = this.formatMessage(level, message, context);
+        
+        // Use appropriate console method
+        if (level === 'ERROR') {
+            console.error(formatted);
+        } else if (level === 'WARN') {
+            console.warn(formatted);
+        } else {
+            console.log(formatted);
+        }
+    }
+
+    /**
+     * Log error with stack trace and context
+     * @param {string} message - Error message
+     * @param {Error|Object} error - Error object or context
+     * @param {Object} context - Additional context
+     */
+    error(message, error, context = {}) {
+        const errorContext = { ...context };
+        
+        if (error instanceof Error) {
+            errorContext.error = error.message;
+            errorContext.stack = error.stack;
+            if (error.code) errorContext.code = error.code;
+        } else if (error && typeof error === 'object') {
+            Object.assign(errorContext, error);
+        }
+        
+        this.log('ERROR', message, errorContext);
+    }
+
+    /**
+     * Log warning message
+     * @param {string} message - Warning message
+     * @param {Object} context - Additional context
+     */
+    warn(message, context = {}) {
+        this.log('WARN', message, context);
+    }
+
+    /**
+     * Log info message
+     * @param {string} message - Info message
+     * @param {Object} context - Additional context
+     */
+    info(message, context = {}) {
+        this.log('INFO', message, context);
+    }
+
+    /**
+     * Log debug message
+     * @param {string} message - Debug message
+     * @param {Object} context - Additional context
+     */
+    debug(message, context = {}) {
+        this.log('DEBUG', message, context);
+    }
+
+    /**
+     * Log scraping activity with standardized format
+     * @param {string} scraperName - Name of the scraper
+     * @param {string} action - Action being performed
+     * @param {Object} details - Additional details
+     */
+    scraper(scraperName, action, details = {}) {
+        this.info(`${scraperName}: ${action}`, {
+            scraper: scraperName,
+            action,
+            ...details
+        });
+    }
+
+    /**
+     * Log Telegram bot activity
+     * @param {string} action - Bot action
+     * @param {Object} details - Additional details
+     */
+    bot(action, details = {}) {
+        this.info(`Telegram: ${action}`, {
+            component: 'telegram',
+            action,
+            ...details
+        });
+    }
+
+    /**
+     * Log performance metrics
+     * @param {string} operation - Operation name
+     * @param {number} duration - Duration in milliseconds
+     * @param {Object} metrics - Additional metrics
+     */
+    performance(operation, duration, metrics = {}) {
+        this.info(`Performance: ${operation}`, {
+            operation,
+            duration_ms: duration,
+            ...metrics
+        });
+    }
+
+    /**
+     * Log application lifecycle events
+     * @param {string} event - Lifecycle event
+     * @param {Object} details - Additional details
+     */
+    lifecycle(event, details = {}) {
+        this.info(`Lifecycle: ${event}`, {
+            event,
+            ...details
+        });
+    }
+}
+
+// Create singleton instance
+const logger = new Logger();
+
+export default logger;
+export { LOG_LEVELS };
