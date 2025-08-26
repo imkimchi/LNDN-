@@ -1,0 +1,11 @@
+{
+  "ignore": [
+    "listings/**/*.json",
+    "node_modules/**/*",
+    ".git"
+  ],
+  "ext": "js,json",
+  "env": {
+    "NODE_ENV": "development"
+  }
+}

@@ -1,33 +1,22 @@
 {
   "searches": [
     {
-      "name": "London ~3 rooms",
-      "url": "https://www.spareroom.co.uk/flatshare/?search_id=1378566370&sort_by=days_since_placed&mode=list"
+      "name": "SpareRoom London ~2 rooms",
+      "url": "https://www.spareroom.co.uk/flatshare/?search_id=1382710306&sort_by=days_since_placed&mode=list"
     },
     {
-      "name": "London ~2 rooms",
-      "url": "https://www.spareroom.co.uk/flatshare/?search_id=1378566423&sort_by=days_since_placed&mode=list"
-    },
-    {
-      "name": "London Studio",
-      "url": "https://www.spareroom.co.uk/flatshare/?search_id=1378568041&mode=list"
-    },
-    {
-      "name": "Greater London ~3 rooms",
-      "url": "https://www.spareroom.co.uk/flatshare/?search_id=1378566485&sort_by=days_since_placed&mode=list"
-    },
-    {
-      "name": "Essex ~3 rooms",
-      "url": "https://www.spareroom.co.uk/flatshare/?search_id=1378566567&sort_by=days_since_placed&mode=list"
-    },
-    {
-      "name": "(RM) London 2bed",
-      "url": "https://www.rightmove.co.uk/property-to-rent/find.html?locationIdentifier=REGION%5E93917&maxBedrooms=2&minBedrooms=2&radius=1.0&sortType=6&index=0&viewType=LIST"
+      "name": "SpareRoom London ~3 rooms",
+      "url": "https://www.spareroom.co.uk/flatshare/?search_id=1382709988&sort_by=days_since_placed&mode=list"
     },
     {
       "name": "(Foxtons) London Studio",
       "url": "https://www.foxtons.co.uk/properties-to-rent/london?order_by=price_desc&prop_type=flats&pricePeriod=PerMonth&sold=0&price_to=250"
+    },
+    {
+      "name": "Rightmove London ~2 rooms",
+      "url": "https://www.rightmove.co.uk/property-to-rent/find.html?useLocationIdentifier=true&locationIdentifier=REGION%5E93883&radius=0.0&maxPrice=900&maxBedrooms=3&_includeLetAgreed=on&index=0&sortType=6&channel=RENT&transactionType=LETTING&displayLocationIdentifier=Zone-3-93883.html"
     }
   ]
 }
+
 

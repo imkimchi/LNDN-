@@ -1,4 +1,4 @@
-import { JSDOM } from 'jsdom';
+import { JSDOM, VirtualConsole } from 'jsdom';
 import { createScraperWrapper, ScrapingError } from '../utils/errorHandler.js';
 import { fetchWithRetry } from '../utils/httpClient.js';
 import { sanitizeUrl } from '../utils/validation.js';
@@ -11,7 +11,22 @@ import logger from '../utils/logger.js';
  */
 function extractJsonFromPage(html) {
     try {
-        const dom = new JSDOM(html);
+        // Create a virtual console that suppresses CSS parsing errors
+        const virtualConsole = new VirtualConsole();
+        virtualConsole.on("error", (error) => {
+            // Suppress CSS parsing errors but log other errors
+            if (!error.message.includes('Could not parse CSS stylesheet')) {
+                logger.debug('JSDOM error (non-CSS)', { error: error.message });
+            }
+        });
+        
+        const dom = new JSDOM(html, {
+            virtualConsole,
+            resources: "usable",
+            runScripts: "outside-only",
+            pretendToBeVisual: false
+        });
+        
         const document = dom.window.document;
 
         // First try to get data from __NEXT_DATA__ script tag
@@ -29,8 +44,36 @@ function extractJsonFromPage(html) {
 
     } catch (error) {
         logger.warn('Error parsing JSON from Rightmove page', { error: error.message });
+        // If JSDOM fails entirely, fall back to regex extraction
+        return extractJsonWithRegex(html);
     }
 
+    return null;
+}
+
+/**
+ * Fallback function to extract JSON data using regex when JSDOM fails
+ * @param {string} html - The HTML content
+ * @returns {Array|null} Array of property objects or null
+ */
+function extractJsonWithRegex(html) {
+    try {
+        // Look for the __NEXT_DATA__ script tag content
+        const nextDataMatch = html.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s);
+        if (nextDataMatch && nextDataMatch[1]) {
+            const jsonData = JSON.parse(nextDataMatch[1]);
+            const properties = jsonData?.props?.pageProps?.searchResults?.properties;
+            if (properties && Array.isArray(properties)) {
+                logger.debug('JSON data extracted using regex fallback', {
+                    propertyCount: properties.length
+                });
+                return properties;
+            }
+        }
+    } catch (error) {
+        logger.debug('Regex extraction failed', { error: error.message });
+    }
+    
     return null;
 }
 
@@ -116,6 +159,9 @@ function processRightmoveData(data, url) {
     if (listings.length === 0) {
         throw new ScrapingError('No valid listings found in JSON data', 'Rightmove', url);
     }
+
+
+    // console.log("url", listings)
     
     logger.info('Rightmove scraping completed', {
         url,
