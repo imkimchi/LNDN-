@@ -30,18 +30,33 @@
     "addedDate": null
   },
   {
-    "id": "chpk0357101",
-    "link": "https://www.foxtons.co.uk/properties-to-rent/HA2/chpk0357101",
-    "title": "Studio to Rent in HA2",
-    "price": "£1050 pcm",
-    "location": "Rayners Lane, Rayners Lane, HA2",
-    "description": "Ideally located opposite Rayners Lane Underground Station, this modern second floor studio flat offers superb living space with neutral and modern décor throughout.",
+    "id": "ptny6208455",
+    "link": "https://www.foxtons.co.uk/properties-to-rent/CR4/ptny6208455",
+    "title": "Studio to Rent in CR4",
+    "price": "£1000 pcm",
+    "location": "Crossways Road, Mitcham, CR4",
+    "description": "Newly refurbished, this spacious room offers bright and airy living space with an en-suite shower room and access to a shared garden and kitchen/dining room.",
     "images": [
-      "https://assets.foxtons.co.uk/w/220/1406279959/chpk0357101-1.jpg"
+      "https://assets.foxtons.co.uk/w/220/1756195103/ptny6208455-1.jpg"
     ],
     "bedrooms": null,
     "bathrooms": null,
-    "summary": "Ideally located opposite Rayners Lane Underground Station, this modern second floor studio flat offers superb living space with neutral and modern décor throughout.",
+    "summary": "Newly refurbished, this spacious room offers bright and airy living space with an en-suite shower room and access to a shared garden and kitchen/dining room.",
+    "addedDate": null
+  },
+  {
+    "id": "ptny6208454",
+    "link": "https://www.foxtons.co.uk/properties-to-rent/CR4/ptny6208454",
+    "title": "Studio to Rent in CR4",
+    "price": "£1000 pcm",
+    "location": "Crossways Road, Mitcham, CR4",
+    "description": "Newly refurbished, this spacious room offers bright and airy living space with an en-suite shower room and access to a shared garden and kitchen/dining room.",
+    "images": [
+      "https://assets.foxtons.co.uk/w/220/1755878369/ptny6208454-1.jpg"
+    ],
+    "bedrooms": null,
+    "bathrooms": null,
+    "summary": "Newly refurbished, this spacious room offers bright and airy living space with an en-suite shower room and access to a shared garden and kitchen/dining room.",
     "addedDate": null
   },
   {
@@ -57,21 +72,6 @@
     "bedrooms": null,
     "bathrooms": null,
     "summary": "Recently refurbished throughout, this spacious room boasts a kitchenette and ensuite shower room. The property also benefits from a communal garden and kitchen. Bills Included.",
-    "addedDate": null
-  },
-  {
-    "id": "chpk0334183",
-    "link": "https://www.foxtons.co.uk/properties-to-rent/N8/chpk0334183",
-    "title": "Studio to Rent in N8",
-    "price": "£1000 pcm",
-    "location": "Tottenham Lane, Crouch End, N8",
-    "description": "This bright and airy studio flat offers modern fittings throughout with open-plan kitchen area and shower room, located close to local amenities.",
-    "images": [
-      "https://assets.foxtons.co.uk/w/220/1736868847/chpk0334183-1.jpg"
-    ],
-    "bedrooms": null,
-    "bathrooms": null,
-    "summary": "This bright and airy studio flat offers modern fittings throughout with open-plan kitchen area and shower room, located close to local amenities.",
     "addedDate": null
   }
 ]
