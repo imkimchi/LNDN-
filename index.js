@@ -9,6 +9,7 @@ import getBotInstance, { sendListingWithImages } from './services/bot.js';
 import configManager from './utils/config.js';
 import logger from './utils/logger.js';
 import { validateConfig, validateSearches } from './utils/validation.js';
+import messageQueue from './utils/messageQueue.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -188,6 +189,16 @@ async function checkForNewListings(name, url) {
                         listingId: listing.id,
                         searchName: name
                     });
+
+                    // Add SpareRoom listings to messaging queue for automated contact
+                    if (urlType === 'spareroom' && listing.link) {
+                        messageQueue.addToQueue(listing.link, {
+                            id: listing.id,
+                            title: listing.title,
+                            searchName: name
+                        });
+                    }
+                    
                 } catch (error) {
                     errorCount++;
                     logger.error('Failed to send listing notification', error, {
@@ -270,12 +281,14 @@ setInterval(trackListings, config.intervalSeconds * 1000);
 trackListings();
 
 // Graceful shutdown handling
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
     logger.lifecycle('Shutdown signal received');
+    await messageQueue.shutdown();
     process.exit(0);
 });
 
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
     logger.lifecycle('Termination signal received');
+    await messageQueue.shutdown();
     process.exit(0);
 });

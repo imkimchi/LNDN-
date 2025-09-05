@@ -16,6 +16,7 @@
 		"dotenv": "^16.4.5",
 		"jsdom": "^26.1.0",
 		"node-telegram-bot-api": "^0.66.0",
+		"playwright": "^1.55.0",
 		"puppeteer-core": "^22.14.0",
 		"puppeteer-extra": "^3.3.6",
 		"puppeteer-extra-plugin-stealth": "^2.11.2"
