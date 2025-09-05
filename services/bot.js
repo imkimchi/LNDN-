@@ -125,8 +125,9 @@ const rateLimiter = new TelegramRateLimiter();
 
 async function shortenUrl(url) {
     try {
-        const response = await axios.get(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`);
-        return response.data.startsWith('http') ? response.data : url;
+        // Using is.gd service which is more reliable and has a simple API
+        const response = await axios.get(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(url)}`);
+        return response.data.startsWith('http') ? response.data.trim() : url;
     } catch (error) {
         logger.debug('URL shortening failed', { url, error: error.message });
         return url; // Return original URL if shortening fails
