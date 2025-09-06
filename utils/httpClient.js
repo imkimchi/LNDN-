@@ -2,6 +2,7 @@
  * Optimized HTTP client with connection pooling and retry logic
  */
 import axios from 'axios';
+import logger from './logger.js';
 import { Agent } from 'https';
 
 // Create reusable HTTPS agent with connection pooling
@@ -108,7 +109,12 @@ export async function fetchWithRetry(url, options = {}) {
             
             if (shouldRetry) {
                 const delay = Math.min(baseDelay * Math.pow(2, attempt - 1), 30000);
-                console.log(`HTTP request failed (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms:`, error.message);
+                logger.warn('HTTP request failed, retrying', {
+                    attempt,
+                    maxRetries,
+                    delay,
+                    message: error.message
+                });
                 await new Promise(resolve => setTimeout(resolve, delay));
                 continue;
             }

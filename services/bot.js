@@ -233,11 +233,21 @@ async function sendListingWithImages(chatId, listing, searchName) {
     // Shorten the URL
     const shortUrl = await shortenUrl(listing.link);
     
+    // Escape Markdown meta-characters in dynamic fields to avoid formatting issues
+    const escapeMd = (text) => {
+        if (!text) return '';
+        return String(text).replace(/[\\_\*\[\]\(\)]/g, (m) => `\\${m}`);
+    };
+
+    const safeTitle = escapeMd(listing.title);
+    const safeLocation = escapeMd(listing.location);
+    const safeSearchName = escapeMd(searchName);
+
     // Format price with bold text and location
     const priceText = listing.price ? `\n*${listing.price}*` : '';
-    const locationText = listing.location ? `\n📍 ${listing.location}` : '';
+    const locationText = listing.location ? `\n📍 ${safeLocation}` : '';
     
-    const caption = `${searchName}\n${listing.title}${priceText}${locationText}\n${shortUrl}`;
+    const caption = `${safeSearchName}\n${safeTitle}${priceText}${locationText}\n${shortUrl}`;
 
     if (listing.images && listing.images.length > 0) {
         const totalImages = listing.images.length;
@@ -321,9 +331,16 @@ function setupCallbackListener(bot) {
             
             // Format caption with bold price, location and shortened URL
             const shortUrl = await shortenUrl(listing.link);
+            const escapeMd = (text) => {
+                if (!text) return '';
+                return String(text).replace(/[\\_\*\[\]\(\)]/g, (m) => `\\${m}`);
+            };
+            const safeTitle = escapeMd(listing.title);
+            const safeLocation = escapeMd(listing.location);
+            const safeSearchName = escapeMd(searchName);
             const priceText = listing.price ? `\n*${listing.price}*` : '';
-            const locationText = listing.location ? `\n📍 ${listing.location}` : '';
-            const newCaption = `${searchName}\n${listing.title}${priceText}${locationText}\n${shortUrl}`;
+            const locationText = listing.location ? `\n📍 ${safeLocation}` : '';
+            const newCaption = `${safeSearchName}\n${safeTitle}${priceText}${locationText}\n${shortUrl}`;
             
             // Edit the message using the preloaded file_id with rate limiting
             await rateLimiter.executeWithRetry(async () => {

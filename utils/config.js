@@ -134,7 +134,7 @@ class ConfigManager {
         return {
             telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
             chatId: process.env.CHAT_ID,
-            zooplayCookies: process.env.ZOOPLA_COOKIES,
+            zooplaCookies: process.env.ZOOPLA_COOKIES,
             intervalSeconds: parseInt(process.env.CHECK_INTERVAL_SECONDS) || 20,
             browserPoolSize: parseInt(process.env.BROWSER_POOL_SIZE) || 2
         };

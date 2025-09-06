@@ -4,7 +4,7 @@ import getRightmoveListings from './fn/rightmove.js';
 import getZooplaListings from './fn/zoopla.js';
 import getFoxtonsListings from './fn/foxtons.js';
 import { getSavedSearchId, getUrlType, getSearchIdentifier } from './utils/urlUtils.js';
-import { getListingsFilePath, readPreviousListings, writeListings } from './utils/fileUtils.js';
+import { getListingsFilePath, readPreviousListings, writeListings, readSentSignatures, writeSentSignatures } from './utils/fileUtils.js';
 import getBotInstance, { sendListingWithImages } from './services/bot.js';
 import configManager from './utils/config.js';
 import logger from './utils/logger.js';
@@ -47,6 +47,7 @@ try {
 
 const config = configManager.getAppConfig();
 const urls = configManager.getSearches();
+let isRunning = false;
 
 // Optimized global cache with LRU-like behavior to prevent memory leaks
 class ListingCache {
@@ -79,6 +80,42 @@ class ListingCache {
 }
 
 const globalSeenListings = new ListingCache();
+const globalSentSignatures = new Set(readSentSignatures());
+
+function normalizeText(value) {
+    if (!value || typeof value !== 'string') return '';
+    return value
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .replace(/[^a-z0-9\s]/g, '')
+        .trim();
+}
+
+function priceToNumber(price) {
+    if (!price || typeof price !== 'string') return '';
+    const m = price.replace(/,/g, '').match(/(\d{2,})/);
+    return m ? m[1] : '';
+}
+
+function urlKey(link) {
+    try {
+        const u = new URL(link);
+        return `${u.hostname}${u.pathname}`.toLowerCase();
+    } catch {
+        return '';
+    }
+}
+
+function makeSignature(listing) {
+    const title = normalizeText(listing.title);
+    const loc = normalizeText(listing.location || listing.address || '');
+    const price = priceToNumber(listing.price || '');
+    const base = `${title}|${loc}|${price}`.trim();
+    if (base.replace(/\|/g, '') !== '') return base; // not all empty
+    // Fallback to URL-derived key
+    const key = urlKey(listing.link || '');
+    return key || `${title}|${price}`;
+}
 
 /**
  * Sleep utility function
@@ -145,12 +182,22 @@ async function checkForNewListings(name, url) {
         }
         
         const searchIdParam = getSearchIdentifier(urlType);
-        const currentListings = await getCurrentListings(url);
+        let currentListings = await getCurrentListings(url);
         const searchId = getSavedSearchId(url, searchIdParam);
         const listingsFile = getListingsFilePath(urlType, searchId);
         const previousListings = readPreviousListings(listingsFile);
         
         // Optimized new listings detection using Set for O(1) lookup
+        // Filter out unwanted Rightmove listings (e.g., Parking only)
+        if (urlType === 'rightmove') {
+            const before = currentListings.length;
+            currentListings = currentListings.filter(l => (l.title || '').trim().toLowerCase() !== 'parking');
+            const removed = before - currentListings.length;
+            if (removed > 0) {
+                logger.info('Filtered Rightmove listings by title', { removed, reason: 'title==Parking' });
+            }
+        }
+
         const previousIds = new Set(previousListings.map(listing => listing.id));
         const newListings = currentListings.filter(listing => 
             listing.id && !previousIds.has(listing.id)
@@ -168,10 +215,21 @@ async function checkForNewListings(name, url) {
         
         const duplicateCount = newListings.length - trulyNewListings.length;
 
-        if (trulyNewListings.length > 0) {
+        // Cross-source deduplication using content-based signature
+        const crossSourceUnique = [];
+        for (const listing of trulyNewListings) {
+            const sig = makeSignature(listing);
+            if (globalSentSignatures.has(sig)) {
+                logger.debug('Skipping duplicate across sources', { signature: sig, title: listing.title, link: listing.link });
+                continue;
+            }
+            crossSourceUnique.push({ listing, signature: sig });
+        }
+
+        if (crossSourceUnique.length > 0) {
             logger.info('New listings found', {
                 searchName: name,
-                newCount: trulyNewListings.length,
+                newCount: crossSourceUnique.length,
                 duplicateCount,
                 totalCurrent: currentListings.length,
                 urlType
@@ -181,10 +239,12 @@ async function checkForNewListings(name, url) {
             let successCount = 0;
             let errorCount = 0;
             
-            for (const listing of trulyNewListings) {
+            for (const item of crossSourceUnique) {
+                const listing = item.listing;
                 try {
                     await sendListingWithImages(config.chatId, listing, name);
                     successCount++;
+                    globalSentSignatures.add(item.signature);
                     logger.debug('Listing notification sent', {
                         listingId: listing.id,
                         searchName: name
@@ -244,6 +304,11 @@ let runCount = 0;
  * Main function that processes all search URLs
  */
 async function trackListings() {
+    if (isRunning) {
+        logger.debug('Previous monitoring cycle still running, skipping');
+        return;
+    }
+    isRunning = true;
     runCount++;
     const startTime = Date.now();
     
@@ -262,13 +327,21 @@ async function trackListings() {
     );
     
     await Promise.allSettled(promises);
-    
+
     const duration = Date.now() - startTime;
     logger.info('Monitoring cycle completed', {
         runCount,
         duration,
         cacheSize: globalSeenListings.size()
     });
+
+    // Persist cross-source sent signatures after each cycle
+    try {
+        writeSentSignatures(Array.from(globalSentSignatures));
+    } catch (e) {
+        logger.warn('Failed to persist sent signatures', { error: e.message });
+    }
+    isRunning = false;
 }
 
 // Start the monitoring process

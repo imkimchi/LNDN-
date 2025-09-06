@@ -16,6 +16,11 @@ function ensureDirectoryExists(dirPath) {
     }
 }
 
+function getListingsDir() {
+    const __dirname = import.meta.url ? new URL('.', import.meta.url).pathname : __dirname;
+    return path.join(__dirname, '..', 'listings');
+}
+
 /**
  * Gets the file path for storing listings data
  * @param {string} urlType - The type of URL (spareroom, rightmove, etc.)
@@ -31,8 +36,7 @@ export function getListingsFilePath(urlType, searchId) {
         throw new Error('searchId must be a non-empty string');
     }
     
-    const __dirname = import.meta.url ? new URL('.', import.meta.url).pathname : __dirname;
-    const prevListingsDir = path.join(__dirname, '..', 'listings');
+    const prevListingsDir = getListingsDir();
     
     // Ensure the listings directory exists
     ensureDirectoryExists(prevListingsDir);
@@ -126,5 +130,50 @@ export function writeListings(filePath, listings) {
         }
         
         throw new Error(`Cannot write listings file: ${error.message}`);
+    }
+}
+
+/**
+ * Returns the path for the persistent cross-source sent signatures file
+ * @returns {string}
+ */
+export function getSentSignaturesPath() {
+    const dir = getListingsDir();
+    ensureDirectoryExists(dir);
+    return path.join(dir, 'sent-signatures.json');
+}
+
+/**
+ * Reads the global sent signatures list from disk
+ * @param {string} [filePath]
+ * @returns {Array<string>} array of signatures
+ */
+export function readSentSignatures(filePath = getSentSignaturesPath()) {
+    try {
+        if (!fs.existsSync(filePath)) return [];
+        const content = fs.readFileSync(filePath, 'utf8');
+        if (!content.trim()) return [];
+        const parsed = JSON.parse(content);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+        console.error(`Failed to read sent signatures file ${filePath}:`, error.message);
+        return [];
+    }
+}
+
+/**
+ * Writes the global sent signatures list to disk
+ * @param {Array<string>} signatures
+ * @param {string} [filePath]
+ */
+export function writeSentSignatures(signatures, filePath = getSentSignaturesPath()) {
+    try {
+        const dir = path.dirname(filePath);
+        ensureDirectoryExists(dir);
+        const tmp = `${filePath}.tmp.${Date.now()}`;
+        fs.writeFileSync(tmp, JSON.stringify(signatures, null, 2), 'utf8');
+        fs.renameSync(tmp, filePath);
+    } catch (error) {
+        console.error(`Failed to write sent signatures file ${filePath}:`, error.message);
     }
 }

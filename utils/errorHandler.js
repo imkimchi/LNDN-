@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import logger from './logger.js';
 
 export class ScrapingError extends Error {
     constructor(message, scraperName, url, originalError = null) {
@@ -15,13 +16,15 @@ export function handleScrapingError(error, scraperName, url) {
     const timestamp = dayjs().format('MM-DD HH:mm:ss');
     
     if (error instanceof ScrapingError) {
-        console.error(`[${timestamp}] ${scraperName} Scraping Error:`, {
+        logger.error(`${scraperName} Scraping Error`, {
+            timestamp,
             message: error.message,
             url: error.url,
             originalError: error.originalError?.message
         });
     } else {
-        console.error(`[${timestamp}] ${scraperName} Unexpected Error:`, {
+        logger.error(`${scraperName} Unexpected Error`, {
+            timestamp,
             message: error.message,
             stack: error.stack,
             url
