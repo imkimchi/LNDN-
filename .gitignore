@@ -141,4 +141,9 @@ dist
 # SvelteKit build / generate output
 .svelte-kit
 
+# Local Zoopla test scripts and artifacts
+test-zoopla-*.js
+session.json
+zoopla-playwright.png
+
 # End of https://www.toptal.com/developers/gitignore/api/node
