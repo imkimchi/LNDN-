@@ -28,6 +28,14 @@ class ConfigManager {
         if (!process.env.ZOOPLA_COOKIES) {
             console.warn('Warning: ZOOPLA_COOKIES not set - Zoopla scraper will be disabled');
         }
+
+        if (!process.env.MONGODB_URI) {
+            console.warn('Warning: MONGODB_URI not set - database persistence and API will remain disabled');
+        }
+
+        if (!process.env.API_PORT) {
+            console.warn('Info: API_PORT not set - using default port 4000 for the API server');
+        }
     }
 
     /**
@@ -136,7 +144,10 @@ class ConfigManager {
             chatId: process.env.CHAT_ID,
             zooplaCookies: process.env.ZOOPLA_COOKIES,
             intervalSeconds: parseInt(process.env.CHECK_INTERVAL_SECONDS) || 20,
-            browserPoolSize: parseInt(process.env.BROWSER_POOL_SIZE) || 2
+            browserPoolSize: parseInt(process.env.BROWSER_POOL_SIZE) || 2,
+            mongoUri: process.env.MONGODB_URI || null,
+            mongoDbName: process.env.MONGODB_DB_NAME || null,
+            apiPort: parseInt(process.env.API_PORT) || 4000
         };
     }
 }

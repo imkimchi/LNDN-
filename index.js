@@ -3,6 +3,8 @@ import getSpareroomListings from './fn/spareroom.js';
 import getRightmoveListings from './fn/rightmove.js';
 import getZooplaListings from './fn/zoopla.js';
 import getFoxtonsListings from './fn/foxtons.js';
+import getDextersListings from './fn/dexters.js';
+import getOnTheMarketListings from './fn/onthemarket.js';
 import { getSavedSearchId, getUrlType, getSearchIdentifier } from './utils/urlUtils.js';
 import { getListingsFilePath, readPreviousListings, writeListings, readSentSignatures, writeSentSignatures } from './utils/fileUtils.js';
 import getBotInstance, { sendListingWithImages } from './services/bot.js';
@@ -10,12 +12,24 @@ import configManager from './utils/config.js';
 import logger from './utils/logger.js';
 import { validateConfig, validateSearches } from './utils/validation.js';
 import messageQueue from './utils/messageQueue.js';
+import { initListingStore, syncListings, markListingAsSent, closeListingStore, isListingStoreEnabled, getExistingListingKeysForSearch } from './services/listingStore.js';
+import { startApiServer, stopApiServer } from './services/apiServer.js';
+import { toListingKey } from './utils/listingUtils.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 // Initialize bot instance
 getBotInstance();
+
+try {
+    const storeInitialised = await initListingStore();
+    if (storeInitialised) {
+        await startApiServer();
+    }
+} catch (error) {
+    logger.error('Failed to initialise persistence layer', error);
+}
 
 // Validate environment and load configuration
 try {
@@ -81,6 +95,8 @@ class ListingCache {
 
 const globalSeenListings = new ListingCache();
 const globalSentSignatures = new Set(readSentSignatures());
+// Tracks signatures currently being processed to prevent concurrent duplicates
+const globalInFlightSignatures = new Set();
 
 function normalizeText(value) {
     if (!value || typeof value !== 'string') return '';
@@ -148,11 +164,19 @@ async function getCurrentListings(url) {
             scraperName = 'Zoopla';
             return await getZooplaListings(url);
         }
+        if (url.includes('onthemarket')) {
+            scraperName = 'OnTheMarket';
+            return await getOnTheMarketListings(url);
+        }
         if (url.includes('foxtons')) {
             scraperName = 'Foxtons';
             return await getFoxtonsListings(url);
         }
-        
+        if (url.includes('dexters')) {
+            scraperName = 'Dexters';
+            return await getDextersListings(url);
+        }
+
         logger.warn('Unknown URL type', { url });
         return [];
     } finally {
@@ -185,8 +209,8 @@ async function checkForNewListings(name, url) {
         let currentListings = await getCurrentListings(url);
         const searchId = getSavedSearchId(url, searchIdParam);
         const listingsFile = getListingsFilePath(urlType, searchId);
-        const previousListings = readPreviousListings(listingsFile);
-        
+        const useListingStore = isListingStoreEnabled();
+
         // Optimized new listings detection using Set for O(1) lookup
         // Filter out unwanted Rightmove listings (e.g., Parking only)
         if (urlType === 'rightmove') {
@@ -198,10 +222,26 @@ async function checkForNewListings(name, url) {
             }
         }
 
-        const previousIds = new Set(previousListings.map(listing => listing.id));
-        const newListings = currentListings.filter(listing => 
-            listing.id && !previousIds.has(listing.id)
-        );
+        const keyedListings = currentListings.map(listing => ({
+            listing,
+            key: toListingKey(urlType, listing.id, listing.link)
+        }));
+
+        let newListings;
+
+        if (useListingStore) {
+            const identifiableEntries = keyedListings.filter(entry => entry.listing.id || entry.listing.link);
+            const keysToCheck = identifiableEntries.map(entry => entry.key);
+            const existingKeys = await getExistingListingKeysForSearch(keysToCheck, name);
+            newListings = identifiableEntries
+                .filter(entry => !existingKeys.has(entry.key))
+                .map(entry => entry.listing);
+        } else {
+            const previousListings = readPreviousListings(listingsFile);
+            const previousIds = new Set(previousListings.map(listing => listing.id));
+            const identifiableListings = currentListings.filter(listing => Boolean(listing.id));
+            newListings = identifiableListings.filter(listing => !previousIds.has(listing.id));
+        }
 
         // Filter out globally seen listings (prevents duplicates across multiple URLs)
         const trulyNewListings = [];
@@ -217,12 +257,20 @@ async function checkForNewListings(name, url) {
 
         // Cross-source deduplication using content-based signature
         const crossSourceUnique = [];
+        let inFlightSkipped = 0;
         for (const listing of trulyNewListings) {
             const sig = makeSignature(listing);
             if (globalSentSignatures.has(sig)) {
-                logger.debug('Skipping duplicate across sources', { signature: sig, title: listing.title, link: listing.link });
+                logger.debug('Skipping duplicate already sent', { signature: sig, title: listing.title, link: listing.link });
                 continue;
             }
+            // Prevent duplicates within the same cycle across concurrent searches
+            if (globalInFlightSignatures.has(sig)) {
+                inFlightSkipped++;
+                logger.debug('Skipping duplicate in-flight', { signature: sig, title: listing.title, link: listing.link });
+                continue;
+            }
+            globalInFlightSignatures.add(sig);
             crossSourceUnique.push({ listing, signature: sig });
         }
 
@@ -232,7 +280,8 @@ async function checkForNewListings(name, url) {
                 newCount: crossSourceUnique.length,
                 duplicateCount,
                 totalCurrent: currentListings.length,
-                urlType
+                urlType,
+                inFlightSkipped
             });
             
             // Send notifications for new listings
@@ -245,6 +294,13 @@ async function checkForNewListings(name, url) {
                     await sendListingWithImages(config.chatId, listing, name);
                     successCount++;
                     globalSentSignatures.add(item.signature);
+                    await markListingAsSent(urlType, listing.id);
+                    // Persist ASAP to reduce chance of duplicates after restart
+                    try {
+                        writeSentSignatures(Array.from(globalSentSignatures));
+                    } catch (e) {
+                        logger.warn('Failed to persist sent signature immediately', { error: e.message });
+                    }
                     logger.debug('Listing notification sent', {
                         listingId: listing.id,
                         searchName: name
@@ -265,6 +321,9 @@ async function checkForNewListings(name, url) {
                         listingId: listing.id,
                         searchName: name
                     });
+                } finally {
+                    // Always clear from in-flight regardless of success to avoid permanent blockage
+                    globalInFlightSignatures.delete(item.signature);
                 }
             }
             
@@ -277,7 +336,9 @@ async function checkForNewListings(name, url) {
         }
         
         // Write all current listings to file for future comparison
-        if (currentListings.length > 0) {
+        if (useListingStore) {
+            await syncListings(urlType, name, url, currentListings);
+        } else if (currentListings.length > 0) {
             writeListings(listingsFile, currentListings);
         }
         
@@ -356,12 +417,16 @@ trackListings();
 // Graceful shutdown handling
 process.on('SIGINT', async () => {
     logger.lifecycle('Shutdown signal received');
+    await stopApiServer();
+    await closeListingStore();
     await messageQueue.shutdown();
     process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
     logger.lifecycle('Termination signal received');
+    await stopApiServer();
+    await closeListingStore();
     await messageQueue.shutdown();
     process.exit(0);
 });

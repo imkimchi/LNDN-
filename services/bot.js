@@ -160,72 +160,72 @@ async function getOrCreateStorageChannel(bot) {
     }
 }
 
-async function cacheImages(bot, images) {
-    const fileIds = new Array(images.length).fill(null);
-    const storageChannel = await getOrCreateStorageChannel(bot);
-    
-    // Process images sequentially with proper rate limiting
-    for (let index = 0; index < images.length; index++) {
-        const imageUrl = images[index];
-        
-        // Check if we already have this image cached
-        if (imageCache.has(imageUrl)) {
-            fileIds[index] = imageCache.get(imageUrl);
-            continue;
-        }
-        
-        try {
-            // Upload to storage channel with rate limiting and retry logic
-            const result = await rateLimiter.executeWithRetry(async () => {
-                return await bot.sendPhoto(storageChannel, imageUrl, { 
-                    disable_notification: true,
-                    caption: `Cache: ${new URL(imageUrl).hostname} - ${index + 1}`
-                });
-            });
-            
-            // Cache the file_id from the highest quality photo
-            const fileId = result.photo[result.photo.length - 1].file_id;
-            fileIds[index] = fileId;
-            
-            // Store in our cache for future use
-            imageCache.set(imageUrl, fileId);
-            
-        } catch (error) {
-            if (error.message.includes('chat not found')) {
-                logger.warn('Storage channel access lost, trying fallback', {
-                    imageIndex: index + 1,
-                    fallbackChannel: process.env.CHAT_ID
-                });
-                // Try using main chat as fallback with rate limiting
-                try {
-                    const result = await rateLimiter.executeWithRetry(async () => {
-                        return await bot.sendPhoto(process.env.CHAT_ID, imageUrl, { 
-                            disable_notification: true,
-                            caption: `Cache: ${new URL(imageUrl).hostname} - ${index + 1}`
-                        });
-                    });
-                    const fileId = result.photo[result.photo.length - 1].file_id;
-                    fileIds[index] = fileId;
-                    imageCache.set(imageUrl, fileId);
-                } catch (fallbackError) {
-                    logger.error('Failed to cache image with fallback', {
-                        imageIndex: index + 1,
-                        error: fallbackError.message
-                    });
-                    fileIds[index] = null;
-                }
-            } else {
-                logger.error('Failed to cache image', {
-                    imageIndex: index + 1,
-                    error: error.message
-                });
-                fileIds[index] = null;
-            }
-        }
-    }
-    
-    return fileIds;
-}
+// async function cacheImages(bot, images) {
+//     const fileIds = new Array(images.length).fill(null);
+//     const storageChannel = await getOrCreateStorageChannel(bot);
+//     
+//     // Process images sequentially with proper rate limiting
+//     for (let index = 0; index < images.length; index++) {
+//         const imageUrl = images[index];
+//         
+//         // Check if we already have this image cached
+//         if (imageCache.has(imageUrl)) {
+//             fileIds[index] = imageCache.get(imageUrl);
+//             continue;
+//         }
+//         
+//         try {
+//             // Upload to storage channel with rate limiting and retry logic
+//             const result = await rateLimiter.executeWithRetry(async () => {
+//                 return await bot.sendPhoto(storageChannel, imageUrl, { 
+//                     disable_notification: true,
+//                     caption: `Cache: ${new URL(imageUrl).hostname} - ${index + 1}`
+//                 });
+//             });
+//             
+//             // Cache the file_id from the highest quality photo
+//             const fileId = result.photo[result.photo.length - 1].file_id;
+//             fileIds[index] = fileId;
+//             
+//             // Store in our cache for future use
+//             imageCache.set(imageUrl, fileId);
+//             
+//         } catch (error) {
+//             if (error.message.includes('chat not found')) {
+//                 logger.warn('Storage channel access lost, trying fallback', {
+//                     imageIndex: index + 1,
+//                     fallbackChannel: process.env.CHAT_ID
+//                 });
+//                 // Try using main chat as fallback with rate limiting
+//                 try {
+//                     const result = await rateLimiter.executeWithRetry(async () => {
+//                         return await bot.sendPhoto(process.env.CHAT_ID, imageUrl, { 
+//                             disable_notification: true,
+//                             caption: `Cache: ${new URL(imageUrl).hostname} - ${index + 1}`
+//                         });
+//                     });
+//                     const fileId = result.photo[result.photo.length - 1].file_id;
+//                     fileIds[index] = fileId;
+//                     imageCache.set(imageUrl, fileId);
+//                 } catch (fallbackError) {
+//                     logger.error('Failed to cache image with fallback', {
+//                         imageIndex: index + 1,
+//                         error: fallbackError.message
+//                     });
+//                     fileIds[index] = null;
+//                 }
+//             } else {
+//                 logger.error('Failed to cache image', {
+//                     imageIndex: index + 1,
+//                     error: error.message
+//                 });
+//                 fileIds[index] = null;
+//             }
+//         }
+//     }
+//     
+//     return fileIds;
+// }
 
 async function sendListingWithImages(chatId, listing, searchName) {
     const bot = getBotInstance();
@@ -262,33 +262,33 @@ async function sendListingWithImages(chatId, listing, searchName) {
             });
         });
 
-        // Cache images in the background (don't await)
-        cacheImages(bot, listing.images).then(fileIds => {
-            // Update the state with cached file_ids once available
-            galleryState.set(sentMessage.message_id, {
-                listing,
-                currentIndex,
-                chatId,
-                searchName,
-                fileIds,
-                timestamp: Date.now(),
-            });
-        }).catch(error => {
-            logger.error('Background image caching failed', {
-                error: error.message,
-                listingId: listing.id,
-                imageCount: listing.images.length
-            });
-            // Store state without cached file_ids as fallback
-            galleryState.set(sentMessage.message_id, {
-                listing,
-                currentIndex,
-                chatId,
-                searchName,
-                fileIds: new Array(listing.images.length).fill(null),
-                timestamp: Date.now(),
-            });
-        });
+        // Cache images in the background (disabled temporarily)
+        // cacheImages(bot, listing.images).then(fileIds => {
+        //     // Update the state with cached file_ids once available
+        //     galleryState.set(sentMessage.message_id, {
+        //         listing,
+        //         currentIndex,
+        //         chatId,
+        //         searchName,
+        //         fileIds,
+        //         timestamp: Date.now(),
+        //     });
+        // }).catch(error => {
+        //     logger.error('Background image caching failed', {
+        //         error: error.message,
+        //         listingId: listing.id,
+        //         imageCount: listing.images.length
+        //     });
+        //     // Store state without cached file_ids as fallback
+        //     galleryState.set(sentMessage.message_id, {
+        //         listing,
+        //         currentIndex,
+        //         chatId,
+        //         searchName,
+        //         fileIds: new Array(listing.images.length).fill(null),
+        //         timestamp: Date.now(),
+        //     });
+        // });
 
         // Store initial state without cached file_ids
         galleryState.set(sentMessage.message_id, {

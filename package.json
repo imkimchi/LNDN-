@@ -7,14 +7,19 @@
 	"scripts": {
 		"start": "node index.js",
 		"health": "node health-check.js",
-		"deploy": "./deploy-ec2.sh"
+		"deploy": "./deploy-ec2.sh",
+		"web:dev": "pnpm --dir web dev",
+		"web:build": "pnpm --dir web build"
 	},
 	"dependencies": {
 		"axios": "^1.7.2",
 		"cheerio": "1.0.0-rc.12",
+		"cors": "^2.8.5",
 		"dayjs": "^1.11.12",
 		"dotenv": "^16.4.5",
+		"express": "^5.1.0",
 		"jsdom": "^26.1.0",
+		"mongodb": "^6.20.0",
 		"node-telegram-bot-api": "^0.66.0",
 		"playwright": "^1.55.0",
 		"puppeteer-core": "^22.14.0",

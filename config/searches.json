@@ -1,22 +1,30 @@
 {
   "searches": [
     {
-      "name": "SpareRoom London ~2 rooms",
-      "url": "https://www.spareroom.co.uk/flatshare/?search_id=1382710306&sort_by=days_since_placed&mode=list"
+      "name": "Dexters",
+      "url": "https://www.dexters.co.uk/property-lettings/grid-draw-search-of-4-bedroom-2-bathroom-properties-to-rent-in-london-under-3000?bounds=51.41679764046538%2C-0.3236234924804826%2C51.6180477157431%2C0.08218400263670489&map_marker_points_hidden=%5B%7B%22lat%22%3A51.41679764046538%2C%22lng%22%3A-0.2700651428711076%7D%2C%7B%22lat%22%3A51.43563573562439%2C%22lng%22%3A0.06501786494139239%7D%2C%7B%22lat%22%3A51.612504972792316%2C%22lng%22%3A0.08218400263670489%7D%2C%7B%22lat%22%3A51.6180477157431%2C%22lng%22%3A-0.3236234924804826%7D%5D&format=json&layout=map"
+    }
+    ,
+    
+    {
+      "name": "Foxtons",
+      "url": "https://www.foxtons.co.uk/properties-to-rent/zone-3/4-bedroom?order_by=price_desc&pricePeriod=PerMonth&sold=0&price_to=700"
+    },
+    
+    {
+      "name": "Rightmove",
+      "url": "https://www.rightmove.co.uk/property-to-rent/find.html?useLocationIdentifier=true&locationIdentifier=REGION%5E93883&radius=0.0&_includeLetAgreed=on&maxPrice=3000&index=0&sortType=6&channel=RENT&transactionType=LETTING&displayLocationIdentifier=Zone-3-93883.html&minBedrooms=4&maxBedrooms=5&minBathrooms=2&maxBathrooms=5"
     },
     {
-      "name": "SpareRoom London ~3 rooms",
-      "url": "https://www.spareroom.co.uk/flatshare/?search_id=1382709988&sort_by=days_since_placed&mode=list"
+      "name": "Zoopla",
+      "url": "https://www.zoopla.co.uk/to-rent/property/london/?beds_max=5&beds_min=4&price_frequency=per_month&price_max=3000&q=London&search_source=to-rent"
     },
     {
-      "name": "(Foxtons) London Studio",
-      "url": "https://www.foxtons.co.uk/properties-to-rent/london?order_by=price_desc&prop_type=flats&pricePeriod=PerMonth&sold=0&price_to=250"
-    },
-    {
-      "name": "Rightmove London ~2 rooms",
-      "url": "https://www.rightmove.co.uk/property-to-rent/find.html?useLocationIdentifier=true&locationIdentifier=REGION%5E93883&radius=0.0&maxPrice=900&maxBedrooms=3&_includeLetAgreed=on&index=0&sortType=6&channel=RENT&transactionType=LETTING&displayLocationIdentifier=Zone-3-93883.html"
+      "name": "OnTheMarket",
+      "url": "https://www.onthemarket.co.uk/property-to-rent/london/?beds_max=5&beds_min=4&price_frequency=per_month&price_max=3000&q=London&search_source=to-rent"
     }
   ]
 }
+
 
 

@@ -15,8 +15,9 @@ const RESET_COLOR = '\x1b[0m';
 
 class Logger {
     constructor() {
-        this.logLevel = process.env.LOG_LEVEL || 'INFO';
-        this.logLevelPriority = LOG_LEVELS[this.logLevel]?.priority ?? LOG_LEVELS.INFO.priority;
+        const envLevel = process.env.LOG_LEVEL?.toUpperCase();
+        this.logLevel = LOG_LEVELS[envLevel] ? envLevel : 'WARN'; // default to warnings/errors to keep output quieter
+        this.logLevelPriority = LOG_LEVELS[this.logLevel].priority;
         this.enableColors = process.stdout.isTTY && process.env.NO_COLOR !== '1';
     }
 

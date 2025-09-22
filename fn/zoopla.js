@@ -65,6 +65,63 @@ function hasType(entity, type) {
     return Array.isArray(entityType) ? entityType.includes(type) : entityType === type;
 }
 
+function isCloudflareChallenge(html) {
+    if (!html) return false;
+
+    const normalized = html.toLowerCase();
+    const indicators = [
+        'cf-browser-verification',
+        'cf-challenge',
+        'window._cf_chl_opt',
+        '__cf_chl_captcha_tk__',
+        'checking your browser before accessing',
+        '<title>just a moment',
+        'cf_chl_managed',
+        'challenge-error-text',
+        'ddos protection by cloudflare',
+        'cf-error-details'
+    ];
+
+    return indicators.some((indicator) => normalized.includes(indicator));
+}
+
+async function clearZooplaSession(context, page) {
+    try {
+        await context.clearCookies();
+    } catch (error) {
+        logger.warn('Failed to clear Zoopla cookies after challenge', { error: error.message });
+    }
+
+    try {
+        await page.evaluate(() => {
+            try {
+                window.localStorage?.clear();
+                window.sessionStorage?.clear();
+            } catch {
+                /* ignore */
+            }
+        });
+    } catch (error) {
+        logger.debug('Failed to clear Zoopla storage after challenge', { error: error.message });
+    }
+}
+
+async function emulateHumanBrowsing(page) {
+    try {
+        await page.waitForTimeout(350 + Math.random() * 450);
+        await page.mouse.move(
+            200 + Math.random() * 400,
+            200 + Math.random() * 300,
+            { steps: 8 }
+        );
+        await page.waitForTimeout(200 + Math.random() * 300);
+        await page.mouse.wheel(0, 300 + Math.random() * 200);
+        await page.waitForTimeout(150 + Math.random() * 250);
+    } catch (error) {
+        logger.debug('Failed to simulate Zoopla browsing behaviour', { error: error.message });
+    }
+}
+
 function normalizeZooplaUrl(url) {
     if (!url || typeof url !== 'string') return null;
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
@@ -366,7 +423,7 @@ async function getZooplaListingsInternal(url) {
         logger.debug('Starting Zoopla scraping with Playwright', { url: sanitizedUrl });
 
         context = await chromium.launchPersistentContext(USER_DATA_DIR, {
-            headless: true,
+            headless: false,
             viewport: { width: 1365, height: 768 },
             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
             locale: 'en-GB',
@@ -390,7 +447,7 @@ async function getZooplaListingsInternal(url) {
 
         await context.route('**/*', (route) => {
             const resourceType = route.request().resourceType();
-            if (resourceType === 'image' || resourceType === 'media' || resourceType === 'font') {
+            if (resourceType === 'media') {
                 return route.abort();
             }
             return route.continue();
@@ -448,7 +505,16 @@ async function getZooplaListingsInternal(url) {
             logger.debug('Zoopla listings marker not detected within timeout window.', { url: sanitizedUrl });
         }
 
+        await emulateHumanBrowsing(page);
+
         const html = await page.content();
+        if (isCloudflareChallenge(html)) {
+            logger.warn('Cloudflare challenge encountered on Zoopla page; clearing session data.', {
+                url: sanitizedUrl
+            });
+            await clearZooplaSession(context, page);
+            throw new ScrapingError('Cloudflare challenge encountered on Zoopla page', 'Zoopla', sanitizedUrl);
+        }
         const listings = extractZooplaListings(html, sanitizedUrl);
 
         logger.info('Zoopla scraping completed', {

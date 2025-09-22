@@ -1,4 +1,6 @@
 import { chromium } from 'playwright';
+import fs from 'fs';
+import path from 'path';
 import logger from '../utils/logger.js';
 import { CONTACT_MESSAGE, MESSAGE_CONFIG } from '../config/messageTemplate.js';
 
@@ -45,7 +47,8 @@ class SpareroomMessenger {
 
             // Launch browser
             this.browser = await chromium.launch({
-                headless: MESSAGE_CONFIG.browser.headless,
+                headless: true,
+                // MESSAGE_CONFIG.browser.headless,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
@@ -261,6 +264,8 @@ class SpareroomMessenger {
             }
 
             if (messageStatus === 'error') {
+                // Capture a screenshot for debugging before throwing
+                await this.captureScreenshot('message-error', listingUrl);
                 throw new Error('Message sending failed - error indicator found on page');
             }
 
@@ -301,6 +306,36 @@ class SpareroomMessenger {
      */
     async sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    /**
+     * Capture a screenshot to aid debugging on errors
+     * @param {string} reason - Reason marker to include in filename
+     * @param {string} [listingUrl] - Optional listing URL for context
+     */
+    async captureScreenshot(reason = 'error', listingUrl = '') {
+        try {
+            if (!this.page) return;
+
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const dir = path.join(process.cwd(), 'listings', 'screenshots');
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
+
+            const urlPart = (listingUrl || '')
+                .replace(/https?:\/\//i, '')
+                .replace(/[^a-z0-9]+/gi, '_')
+                .slice(0, 80)
+                .toLowerCase();
+            const filename = `spareroom_${reason}_${urlPart ? urlPart + '_' : ''}${timestamp}.png`;
+            const filePath = path.join(dir, filename);
+
+            await this.page.screenshot({ path: filePath, fullPage: true });
+            logger.info('Saved SpareRoom screenshot', { filePath, reason, listingUrl });
+        } catch (e) {
+            logger.warn('Failed to capture SpareRoom screenshot', { error: e?.message });
+        }
     }
 
     /**

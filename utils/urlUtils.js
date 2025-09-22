@@ -24,21 +24,35 @@ export function getSavedSearchId(url, param) {
         // Create a short hash for file naming
         return crypto.createHash('md5').update(sortedParams).digest('hex').substring(0, 8);
     }
+
+    if (param === 'dexters_hash') {
+        const normalizedUrl = url.split('#')[0];
+        return crypto.createHash('md5').update(normalizedUrl).digest('hex').substring(0, 8);
+    }
+
+    if (param === 'onthemarket_hash') {
+        const normalizedUrl = url.split('#')[0];
+        return crypto.createHash('md5').update(normalizedUrl).digest('hex').substring(0, 8);
+    }
     
     const urlObject = new URL(url);
     const params = new URLSearchParams(urlObject.search);
     const searchId = params.get(param);
-    
-    // If no saved search ID found for Rightmove, create a hash from search parameters
-    if (!searchId && param === 'savedSearchId') {
+
+    const buildHash = () => {
         const sortedParams = Array.from(params.entries())
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([key, value]) => `${key}=${value}`)
             .join('&');
-        
-        return crypto.createHash('md5').update(sortedParams).digest('hex').substring(0, 8);
+        const base = sortedParams || `${urlObject.pathname}`;
+        return crypto.createHash('md5').update(base).digest('hex').substring(0, 8);
+    };
+
+    // Generate stable identifiers when the upstream platform does not provide one
+    if (!searchId && (param === 'savedSearchId' || param === 'search_identifier')) {
+        return buildHash();
     }
-    
+
     return searchId;
 }
 
@@ -51,7 +65,9 @@ export function getUrlType(url) {
     if (url.includes('spareroom.co.uk')) return 'spareroom';
     if (url.includes('rightmove.co.uk')) return 'rightmove';
     if (url.includes('zoopla.co.uk')) return 'zoopla';
+    if (url.includes('onthemarket.com') || url.includes('onthemarket.co.uk')) return 'onthemarket';
     if (url.includes('foxtons.co.uk')) return 'foxtons';
+    if (url.includes('dexters.co.uk')) return 'dexters';
     return null;
 }
 
@@ -66,7 +82,9 @@ export function getSearchIdentifier(urlType) {
         case 'spareroom': return 'search_id';
         case 'rightmove': return 'savedSearchId';
         case 'zoopla': return 'search_identifier';
+        case 'onthemarket': return 'onthemarket_hash';
         case 'foxtons': return 'foxtons_hash';
+        case 'dexters': return 'dexters_hash';
         default: throw new Error('Unsupported URL type');
     }
 }

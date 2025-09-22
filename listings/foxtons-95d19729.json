@@ -1,9 +1,52 @@
 [
   {
+    "id": "chpk5456752",
+    "link": "https://www.foxtons.co.uk/properties-to-rent/NW10/chpk5456752",
+    "title": "Property",
+    "price": null,
+    "location": null,
+    "description": null,
+    "images": [],
+    "bedrooms": null,
+    "bathrooms": null,
+    "summary": null,
+    "addedDate": null
+  },
+  {
+    "id": "chpk5703443",
+    "link": "https://www.foxtons.co.uk/properties-to-rent/WD24/chpk5703443",
+    "title": "Flat to Rent in WD24",
+    "price": "£1000 pcm",
+    "location": "Berry Avenue, Watford, WD24",
+    "description": "A lovely 1 bedroom flat situated within a house conversion, boasting modern accommodation, a private garden and an excellent Watford location.",
+    "images": [
+      "https://assets.foxtons.co.uk/w/220/1754058333/chpk5703443-10.jpg"
+    ],
+    "bedrooms": null,
+    "bathrooms": null,
+    "summary": "A lovely 1 bedroom flat situated within a house conversion, boasting modern accommodation, a private garden and an excellent Watford location.",
+    "addedDate": null
+  },
+  {
+    "id": "chpk5223183",
+    "link": "https://www.foxtons.co.uk/properties-to-rent/CR7/chpk5223183",
+    "title": "Studio to Rent in CR7",
+    "price": "£1000 pcm",
+    "location": "London Road, CR, Thornton Heath, CR7",
+    "description": "Situated moments from local amenities on London Road, this well-presented Studio room offers spacious accommodation with modern bathroom and access to shared kitchen/dining space.",
+    "images": [
+      "https://assets.foxtons.co.uk/w/220/1683047623/chpk5223183-1.jpg"
+    ],
+    "bedrooms": null,
+    "bathrooms": null,
+    "summary": "Situated moments from local amenities on London Road, this well-presented Studio room offers spacious accommodation with modern bathroom and access to shared kitchen/dining space.",
+    "addedDate": null
+  },
+  {
     "id": "chpk4330249",
     "link": "https://www.foxtons.co.uk/properties-to-rent/SW17/chpk4330249",
     "title": "Studio to Rent in SW17",
-    "price": "£1075 pcm",
+    "price": "£975 pcm",
     "location": "Rostella Road, Tooting, SW17",
     "description": "Well presented and situated on the 1st floor of a terrace house, this well proportioned studio flat has a kitchenette, a lovely bay window and a feature fireplace. Suitable for one tenant only.",
     "images": [
@@ -15,63 +58,18 @@
     "addedDate": null
   },
   {
-    "id": "chpk6123860",
-    "link": "https://www.foxtons.co.uk/properties-to-rent/WD17/chpk6123860",
-    "title": "Flat to Rent in WD17",
-    "price": "£1050 pcm",
-    "location": "Sotheron Road, WD17, Watford, WD17",
-    "description": "This fantastic one bedroom flat on the first floor, boasts an open plan living space, separate fitted kitchen and spacious double bedroom.",
+    "id": "ptny6207120",
+    "link": "https://www.foxtons.co.uk/properties-to-rent/SW19/ptny6207120",
+    "title": "Studio to Rent in SW19",
+    "price": "£950 pcm",
+    "location": "Deer Park Road, Merton Abbey Mills, SW19",
+    "description": "Offering bright modern living space within a recently converted building, this superb studio flat has been finished to the highest standards and features a sleek open-plan kitchen and chic bathroom.",
     "images": [
-      "https://assets.foxtons.co.uk/w/220/1753805994/chpk6123860-1.jpg"
+      "https://assets.foxtons.co.uk/w/220/1756914384/ptny6207120-1.jpg"
     ],
     "bedrooms": null,
     "bathrooms": null,
-    "summary": "This fantastic one bedroom flat on the first floor, boasts an open plan living space, separate fitted kitchen and spacious double bedroom.",
-    "addedDate": null
-  },
-  {
-    "id": "ptny6208455",
-    "link": "https://www.foxtons.co.uk/properties-to-rent/CR4/ptny6208455",
-    "title": "Studio to Rent in CR4",
-    "price": "£1000 pcm",
-    "location": "Crossways Road, Mitcham, CR4",
-    "description": "Newly refurbished, this spacious room offers bright and airy living space with an en-suite shower room and access to a shared garden and kitchen/dining room.",
-    "images": [
-      "https://assets.foxtons.co.uk/w/220/1756195103/ptny6208455-1.jpg"
-    ],
-    "bedrooms": null,
-    "bathrooms": null,
-    "summary": "Newly refurbished, this spacious room offers bright and airy living space with an en-suite shower room and access to a shared garden and kitchen/dining room.",
-    "addedDate": null
-  },
-  {
-    "id": "ptny6208454",
-    "link": "https://www.foxtons.co.uk/properties-to-rent/CR4/ptny6208454",
-    "title": "Studio to Rent in CR4",
-    "price": "£1000 pcm",
-    "location": "Crossways Road, Mitcham, CR4",
-    "description": "Newly refurbished, this spacious room offers bright and airy living space with an en-suite shower room and access to a shared garden and kitchen/dining room.",
-    "images": [
-      "https://assets.foxtons.co.uk/w/220/1755878369/ptny6208454-1.jpg"
-    ],
-    "bedrooms": null,
-    "bathrooms": null,
-    "summary": "Newly refurbished, this spacious room offers bright and airy living space with an en-suite shower room and access to a shared garden and kitchen/dining room.",
-    "addedDate": null
-  },
-  {
-    "id": "chpk6204551",
-    "link": "https://www.foxtons.co.uk/properties-to-rent/HA3/chpk6204551",
-    "title": "Studio to Rent in HA3",
-    "price": "£1000 pcm",
-    "location": "Preston Hill, Harrow, HA3",
-    "description": "Recently refurbished throughout, this spacious room boasts a kitchenette and ensuite shower room. The property also benefits from a communal garden and kitchen. Bills Included.",
-    "images": [
-      "https://assets.foxtons.co.uk/w/220/1753804642/chpk6204551-2.jpg"
-    ],
-    "bedrooms": null,
-    "bathrooms": null,
-    "summary": "Recently refurbished throughout, this spacious room boasts a kitchenette and ensuite shower room. The property also benefits from a communal garden and kitchen. Bills Included.",
+    "summary": "Offering bright modern living space within a recently converted building, this superb studio flat has been finished to the highest standards and features a sleek open-plan kitchen and chic bathroom.",
     "addedDate": null
   }
 ]

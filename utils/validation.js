@@ -5,7 +5,11 @@
 const SUPPORTED_DOMAINS = [
     'spareroom.co.uk',
     'rightmove.co.uk',
-    'foxtons.co.uk'
+    'zoopla.co.uk',
+    'onthemarket.com',
+    'onthemarket.co.uk',
+    'foxtons.co.uk',
+    'dexters.co.uk'
 ];
 
 /**
@@ -124,11 +128,19 @@ export function validateConfig(config) {
         errors.push('Invalid Telegram bot token format');
     }
     
-    // Validate chat ID
+    // Validate chat ID (allow numeric IDs or @usernames)
     if (!config.chatId) {
         errors.push('Missing chatId');
-    } else if (typeof config.chatId !== 'string' || !config.chatId.match(/^-?\d+$/)) {
-        errors.push('Invalid chatId format (must be numeric string)');
+    } else if (typeof config.chatId !== 'string') {
+        errors.push('Invalid chatId format (must be string)');
+    } else {
+        const trimmedChatId = config.chatId.trim();
+        const isNumericId = /^-?\d+$/.test(trimmedChatId);
+        const isUsername = /^@[A-Za-z0-9_]{5,}$/i.test(trimmedChatId);
+
+        if (!isNumericId && !isUsername) {
+            errors.push('Invalid chatId format (use numeric ID or @username)');
+        }
     }
     
     // Validate interval
