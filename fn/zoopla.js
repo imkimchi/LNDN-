@@ -423,7 +423,7 @@ async function getZooplaListingsInternal(url) {
         logger.debug('Starting Zoopla scraping with Playwright', { url: sanitizedUrl });
 
         context = await chromium.launchPersistentContext(USER_DATA_DIR, {
-            headless: false,
+            headless: true,
             viewport: { width: 1365, height: 768 },
             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
             locale: 'en-GB',
